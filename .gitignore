@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+.npm
+.yarn-integrity
+
+# Environment Variables
+# We accept .env (defaults), but ignore local overrides/secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+/build
+/dist
+/coverage
+/.nyc_output
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+.idea/
+
+# Note: package-lock.json and yarn.lock should be committed!

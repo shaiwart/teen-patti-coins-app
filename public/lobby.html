@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teen Patti Ledger - Game Lobby</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Game Interface -->
+        <div id="game-interface" class="screen">
+            <header>
+                <div class="lobby-info">
+                    <span id="display-lobby-name">Loading...</span>
+                    <button class="btn-small" onclick="copyLobbyId()">Copy ID</button>
+                    <button class="btn-small" style="margin-left: 10px; background: rgba(239, 68, 68, 0.2);"
+                        onclick="window.location.href='/'">Exit</button>
+                </div>
+                <div class="pot-container">
+                    <div class="label">CURRENT POT</div>
+                    <div class="value" id="pot-amount">₹0</div>
+                </div>
+                <div class="stake-info">
+                    Current Stake: <span id="current-stake">₹0</span>
+                </div>
+            </header>
+
+            <main id="players-container">
+                <!-- Player cards injected here -->
+            </main>
+
+            <!-- Action Controls (Fixed Bottom) -->
+            <footer id="action-panel" class="hidden">
+                <div class="status-bar" id="status-bar">Waiting for game to start...</div>
+
+                <div id="admin-controls" class="hidden">
+                    <button class="btn-primary" onclick="startGame()">Start Game</button>
+                </div>
+
+                <div id="player-controls" class="hidden">
+                    <div class="row">
+                        <button class="btn-action btn-fold" onclick="sendAction('FOLD')">Fold</button>
+                        <button class="btn-action btn-blind" id="btn-blind" onclick="sendAction('BLIND')">Blind</button>
+                        <button class="btn-action btn-seen" id="btn-seen"
+                            onclick="sendAction('SEEN_BET')">Chaall</button>
+                    </div>
+                    <div class="row" style="margin-top: 10px;">
+                        <input type="number" id="raise-amount" placeholder="Raise Amount">
+                        <button class="btn-action btn-raise" onclick="sendAction('RAISE')">Raise</button>
+                    </div>
+                </div>
+
+                <div id="show-controls" class="hidden">
+                    <button class="btn-action btn-show" onclick="sendAction('SHOW')">Ask for Show</button>
+                </div>
+
+                <!-- Winner Selection (Admin only, when SHOW_PENDING) -->
+                <div id="winner-selector" class="hidden">
+                    <h3>Select Winner</h3>
+                    <div id="winner-list" class="winner-grid"></div>
+                </div>
+
+            </footer>
+        </div>
+
+        <!-- Add Player Modal -->
+        <div id="add-player-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Add Player</h3>
+                <input type="text" id="new-player-name" placeholder="Name">
+                <input type="number" id="new-player-balance" placeholder="Initial Balance" value="10000">
+                <button onclick="addPlayer()">Add</button>
+                <button class="btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+
+        <button id="fab-add-player" class="fab" onclick="openAddPlayerModal()">+</button>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">Action Successful</div>
+
+    <script src="lobby.js"></script>
+</body>
+
+</html>

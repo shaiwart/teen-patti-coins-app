@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teen Patti Ledger</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container" style="display: flex; align-items: center; justify-content: center;">
+        <!-- Auth Section -->
+        <div id="auth-section" class="screen" style="width: 100%; max-width: 400px;">
+            <h1>Teen Patti Ledger</h1>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <h2>Login</h2>
+                <div class="form-group">
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Password">
+                    <button onclick="login()">Login</button>
+                    <div class="divider">OR</div>
+                    <button class="btn-secondary" onclick="showRegister()">Create Account</button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="hidden">
+                <h2>Register</h2>
+                <div class="form-group">
+                    <input type="text" id="reg-name" placeholder="Full Name">
+                    <input type="email" id="reg-email" placeholder="Email">
+                    <input type="password" id="reg-password" placeholder="Password">
+                    <button onclick="register()">Sign Up</button>
+                    <div class="divider">OR</div>
+                    <button class="btn-secondary" onclick="showLogin()">Back to Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard (Lobby Setup/Join) -->
+        <div id="dashboard-section" class="screen hidden" style="width: 100%;">
+            <h1>Welcome, <span id="user-name-display">User</span></h1>
+            <div class="form-group">
+                <h3>Create Lobby</h3>
+                <input type="text" id="lobby-name" placeholder="Lobby Name (Unique)">
+                <input type="number" id="boot-amount" placeholder="Boot Amount" value="100">
+                <input type="number" id="initial-wallet" placeholder="Initial Wallet" value="10000">
+                <button onclick="createLobby()">Create & Join</button>
+            </div>
+            <div class="divider">OR</div>
+            <div class="form-group">
+                <h3>Join Lobby</h3>
+                <input type="text" id="lobby-identifier" placeholder="Lobby Name or ID">
+                <input type="text" id="join-player-name"
+                    placeholder="Your Player Name (Optional, defaults to User Name)">
+                <button onclick="joinLobby()">Enter Lobby</button>
+            </div>
+            <div class="divider"></div>
+            <button class="btn-secondary" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">Action Successful</div>
+
+    <script src="index.js"></script>
+</body>
+
+</html>
