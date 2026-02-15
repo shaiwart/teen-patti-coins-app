@@ -286,9 +286,11 @@ app.post('/game/action', async (req, res) => {
         // 2. Process Action
         let deduction = 0;
         let nextStake = game.current_stake;
-        console.log(game);
         let nextStatus = 'ACTIVE';
         let playerUpdateStatus = null; // actions can change player status (e.g., BLIND -> SEEN, or -> PACKED)
+
+        // Get boot_amount from lobbies table as requested
+        const lobbyRes = await client.query('SELECT boot_amount FROM lobbies WHERE id = $1', [game.lobby_id]);
 
         if (actionType === 'FOLD') {
             deduction = 0;
@@ -298,7 +300,9 @@ app.post('/game/action', async (req, res) => {
             // Ensure player is currently BLIND? (Optional validation, but good to have)
             // If player is SEEN, they shouldn't call BLIND action, but 'SEEN_BET' or whatever.
             // We'll trust the input mapping for now, or enforce simple logic.
-            deduction = game.current_stake;
+            const bootAmount = lobbyRes.rows[0].boot_amount;
+            // deduction = game.current_stake;
+            deduction = bootAmount;
         } else if (actionType === 'SEEN_BET') {
             // Requirement: "Option A (Bet): Deduct Current Stake... Status -> SEEN"
             if (player.status !== 'SEEN') { // Assuming we track player status in game? 
