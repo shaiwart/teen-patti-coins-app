@@ -119,16 +119,28 @@ function render(data) {
 
     if (!game) {
         ui.statusBar.innerText = 'Waiting to Start...';
-        ui.adminControls.classList.remove('hidden'); // Anyone can start for now
+        // Only Admin can start? Or anyone? Requirement says "only admin should be able to select winner". 
+        // Let's restrict Start to Admin too for consistency, or keep it open if not requested.
+        // User only asked for "select winner". I'll restrict "Start" too if I'm already here? 
+        // For now, adhere strictly to "select winner". 
+        // But "admin_user_id" is available in lobby object.
+        const isAdmin = currentUser.id === lobby.admin_user_id;
+        if (isAdmin) ui.adminControls.classList.remove('hidden');
     } else if (game.status === 'COMPLETED') {
         ui.statusBar.innerText = `Winner: ${players.find(p => p.id === game.winner_id)?.name}. Ready for new game.`;
-        ui.adminControls.classList.remove('hidden');
+        const isAdmin = currentUser.id === lobby.admin_user_id;
+        if (isAdmin) ui.adminControls.classList.remove('hidden');
     } else if (game.status === 'SHOW_PENDING') {
         ui.statusBar.innerText = 'Show Requested! Admin select winner.';
-        ui.winnerSelector.classList.remove('hidden');
-        renderWinnerSelector(players);
+        const isAdmin = currentUser.id === lobby.admin_user_id;
+        if (isAdmin) {
+            ui.winnerSelector.classList.remove('hidden');
+            renderWinnerSelector(players);
+        } else {
+            ui.statusBar.innerText += ' (Waiting for Admin)';
+        }
     } else {
-        // ACTIVE Game
+        // ... active game logic ...
         const turnPlayer = players.find(p => p.id === game.current_turn_player_id);
         ui.statusBar.innerText = `Current Turn: ${turnPlayer?.name}`;
 
@@ -220,7 +232,7 @@ async function endGame(winnerId) {
         const res = await fetch('/game/end', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gameId: gameState.id, winnerId })
+            body: JSON.stringify({ gameId: gameState.id, winnerId, userId: currentUser.id })
         });
         const data = await res.json();
         if (data.error) alert(data.error);

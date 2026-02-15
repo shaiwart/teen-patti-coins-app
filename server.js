@@ -431,7 +431,8 @@ app.post('/game/action', async (req, res) => {
 
 // End Game
 app.post('/game/end', async (req, res) => {
-    const { gameId, winnerId } = req.body;
+    const { gameId, winnerId, userId } = req.body;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const client = await pool.connect();
     try {
@@ -444,6 +445,17 @@ app.post('/game/end', async (req, res) => {
             return res.status(404).json({ error: 'Active game not found' });
         }
         const game = gameRes.rows[0];
+
+        // Verify Admin
+        const lobbyRes = await client.query('SELECT admin_user_id FROM lobbies WHERE id = $1', [game.lobby_id]);
+        if (lobbyRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Lobby not found' });
+        }
+        if (lobbyRes.rows[0].admin_user_id !== userId) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Only Lobby Admin can end the game' });
+        }
 
         // Credit Pot to Winner
         await client.query(`UPDATE players SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [game.pot, winnerId]);
