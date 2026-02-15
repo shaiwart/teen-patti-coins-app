@@ -77,7 +77,73 @@ app.post('/auth/login', async (req, res) => {
 
 // --- API Routes ---
 
-// Start Game (Existing) - No change needed yet, uses lobbyId
+// Start Game
+app.post('/game/start', async (req, res) => {
+    const { lobbyId } = req.body;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Check if game already active
+        const existingGame = await client.query(`SELECT * FROM games WHERE lobby_id = $1 AND status != 'COMPLETED'`, [lobbyId]);
+        if (existingGame.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Game already active' });
+        }
+
+        // Get Lobby Boot Amount
+        const lobbyRes = await client.query('SELECT * FROM lobbies WHERE id = $1', [lobbyId]);
+        if (lobbyRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Lobby not found' });
+        }
+        const bootAmount = lobbyRes.rows[0].boot_amount;
+
+        // Get Active Players
+        const playersRes = await client.query('SELECT * FROM players WHERE lobby_id = $1 AND is_active = TRUE ORDER BY turn_order ASC', [lobbyId]);
+        const players = playersRes.rows;
+
+        if (players.length < 2) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Not enough players to start' });
+        }
+
+        // Deduct Boot Amount and Calculate Pot
+        let initialPot = 0;
+        for (const player of players) {
+            if (player.wallet_balance < bootAmount) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: `Player ${player.name} has insufficient funds` });
+            }
+            await client.query('UPDATE players SET wallet_balance = wallet_balance - $1 WHERE id = $2', [bootAmount, player.id]);
+            initialPot += bootAmount;
+        }
+
+        // Create Game
+        // First player in list gets the turn initially. 
+        const firstTurnPlayerId = players[0].id;
+
+        const gameRes = await client.query(
+            `INSERT INTO games (lobby_id, status, pot, current_stake, current_turn_player_id) 
+             VALUES ($1, 'ACTIVE', $2, $3, $4) RETURNING *`,
+            [lobbyId, initialPot, bootAmount, firstTurnPlayerId]
+        );
+
+        // Reset all players game_status to BLIND (just in case)
+        await client.query(`UPDATE players SET game_status = 'BLIND' WHERE lobby_id = $1`, [lobbyId]);
+
+        await client.query('COMMIT');
+        res.json({ message: 'Game started', game: gameRes.rows[0] });
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error(e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    } finally {
+        client.release();
+    }
+});
 
 // Create Lobby
 app.post('/lobby/create', async (req, res) => {
@@ -220,6 +286,7 @@ app.post('/game/action', async (req, res) => {
         // 2. Process Action
         let deduction = 0;
         let nextStake = game.current_stake;
+        console.log(game);
         let nextStatus = 'ACTIVE';
         let playerUpdateStatus = null; // actions can change player status (e.g., BLIND -> SEEN, or -> PACKED)
 
