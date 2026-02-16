@@ -326,16 +326,17 @@ app.post('/game/action', async (req, res) => {
             deduction = game.current_stake;
             playerUpdateStatus = 'SEEN';
         } else if (actionType === 'RAISE') {
-            // Requirement: "Total Pay = Current Stake + Raise Amount"
-            // "Update Current Stake = Current Stake + Raise Amount"
-            // "Status -> SEEN"
-            const raise = parseInt(raiseAmount);
-            if (isNaN(raise) || raise <= 0) {
+            // New Requirement: Input is Total Stake (not difference)
+            // "the amount put in the field is the total raised amount (total)"
+
+            const newTotalStake = parseInt(raiseAmount);
+            if (isNaN(newTotalStake) || newTotalStake <= game.current_stake) {
                 await client.query('ROLLBACK');
-                return res.status(400).json({ error: 'Invalid raise amount' });
+                return res.status(400).json({ error: 'Raise amount must be higher than current stake' });
             }
-            deduction = game.current_stake + raise;
-            nextStake = game.current_stake + raise;
+
+            deduction = newTotalStake;
+            nextStake = newTotalStake;
             playerUpdateStatus = 'SEEN';
         } else if (actionType === 'SHOW') {
             // Validation: Only 2 active players remaining.
