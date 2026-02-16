@@ -73,6 +73,7 @@ async function pollState() {
 function render(data) {
     const { lobby, players, game } = data;
     gameState = game;
+    currentPlayers = players; // Store for re-ordering features
 
     // 1. App Header
     ui.lobbyName.innerText = lobby.name;
@@ -183,17 +184,87 @@ function renderWinnerSelector(players) {
 }
 
 async function startGame() {
+    // Open Modal instead of direct start
+    if (!currentLobbyId) return;
+    openStartGameModal();
+}
+
+// Re-order modal logic
+let localPlayerOrder = []; // Array of player objects
+
+function openStartGameModal() {
+    if (currentPlayers.length < 2) return alert('Need at least 2 players to start.');
+
+    // Filter active players only?
+    // Requirement implies "active players in the game".
+    localPlayerOrder = [...currentPlayers.filter(p => p.is_active)]; // Copy
+
+    const modal = document.getElementById('start-game-modal');
+    if (!modal) {
+        console.error('Start Game Modal not found in DOM. Please refresh the page.');
+        alert('Error: Start Game Modal missing. Try refreshing the page.');
+        return;
+    }
+
+    renderReorderList();
+    modal.classList.remove('hidden');
+}
+
+function closeStartGameModal() {
+    document.getElementById('start-game-modal').classList.add('hidden');
+}
+
+function renderReorderList() {
+    const list = document.getElementById('player-order-list');
+    list.innerHTML = '';
+
+    localPlayerOrder.forEach((p, index) => {
+        const el = document.createElement('div');
+        el.className = 'player-card'; // Reuse style
+        el.style.padding = '10px';
+        el.style.justifyContent = 'space-between';
+
+        el.innerHTML = `
+            <span>${index + 1}. ${p.name}</span>
+            <div>
+                <button class="btn-small" onclick="movePlayer(${index}, -1)" ${index === 0 ? 'disabled' : ''}>⬆️</button>
+                <button class="btn-small" onclick="movePlayer(${index}, 1)" ${index === localPlayerOrder.length - 1 ? 'disabled' : ''}>⬇️</button>
+            </div>
+        `;
+        list.appendChild(el);
+    });
+}
+
+function movePlayer(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= localPlayerOrder.length) return;
+
+    // Swap
+    [localPlayerOrder[index], localPlayerOrder[newIndex]] = [localPlayerOrder[newIndex], localPlayerOrder[index]];
+    renderReorderList();
+}
+
+async function confirmStartGame() {
     if (!currentLobbyId) return;
     try {
+        const playerOrderIds = localPlayerOrder.map(p => p.id);
         const res = await fetch('/game/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lobbyId: currentLobbyId })
+            body: JSON.stringify({ lobbyId: currentLobbyId, playerOrder: playerOrderIds })
         });
         const data = await res.json();
         if (data.error) alert(data.error);
-        else pollState();
+        else {
+            closeStartGameModal();
+            pollState();
+        }
     } catch (e) { console.error(e); }
+}
+
+async function startGame() {
+    // Legacy direct start not used, logic moved to openStartGameModal -> confirmStartGame
+    openStartGameModal();
 }
 
 async function sendAction(type) {

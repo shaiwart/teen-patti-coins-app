@@ -82,6 +82,19 @@
 
     </div>
 
+    <!-- Start Game Modal -->
+    <div id="start-game-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Set Turn Order</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Arrange players for the first turn.</p>
+            <div id="player-order-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Players injected here -->
+            </div>
+            <button onclick="confirmStartGame()">Confirm & Start</button>
+            <button class="btn-secondary" onclick="closeStartGameModal()">Cancel</button>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden">Action Successful</div>
 

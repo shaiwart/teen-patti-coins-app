@@ -79,7 +79,7 @@ app.post('/auth/login', async (req, res) => {
 
 // Start Game
 app.post('/game/start', async (req, res) => {
-    const { lobbyId } = req.body;
+    const { lobbyId, playerOrder } = req.body;
 
     const client = await pool.connect();
     try {
@@ -100,7 +100,21 @@ app.post('/game/start', async (req, res) => {
         }
         const bootAmount = lobbyRes.rows[0].boot_amount;
 
-        // Get Active Players
+        // If playerOrder is provided, update turn_order
+        if (playerOrder && Array.isArray(playerOrder) && playerOrder.length > 0) {
+            // Validate: Ensure all IDs belong to this lobby? 
+            // For MVP, just update those that match. 
+            // We expect frontend to send all active player IDs in order.
+            for (let i = 0; i < playerOrder.length; i++) {
+                const playerId = playerOrder[i];
+                await client.query(
+                    'UPDATE players SET turn_order = $1 WHERE id = $2 AND lobby_id = $3',
+                    [i + 1, playerId, lobbyId]
+                );
+            }
+        }
+
+        // Get Active Players (Now in correct order)
         const playersRes = await client.query('SELECT * FROM players WHERE lobby_id = $1 AND is_active = TRUE ORDER BY turn_order ASC', [lobbyId]);
         const players = playersRes.rows;
 
@@ -191,26 +205,27 @@ app.post('/lobby/join', async (req, res) => {
         await client.query('BEGIN');
 
         // Find Lobby
+        console.log(`[Join Debug] Identifier: '${lobbyIdentifier}'`);
         let lobbyRes;
         if (Number.isInteger(Number(lobbyIdentifier))) {
+            console.log('[Join Debug] type: ID');
             lobbyRes = await client.query('SELECT * FROM lobbies WHERE id = $1', [lobbyIdentifier]);
             if (lobbyRes.rows.length === 0) {
-                // Try as name if not found as ID? Or strict? Let's check name too if ID fails or just use OR
+                console.log('[Join Debug] ID not found, trying name...');
                 lobbyRes = await client.query('SELECT * FROM lobbies WHERE name = $1', [lobbyIdentifier]);
             }
         } else {
+            console.log('[Join Debug] type: Name');
             lobbyRes = await client.query('SELECT * FROM lobbies WHERE name = $1', [lobbyIdentifier]);
         }
 
-        // Actually, cleaner:
-        // const lobbyRes = await client.query('SELECT * FROM lobbies WHERE id::text = $1 OR name = $1', [String(lobbyIdentifier)]); 
-        // But id is int. 
-
         if (lobbyRes.rows.length === 0) {
+            console.log('[Join Debug] Lobby NOT FOUND');
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Lobby not found' });
+            return res.status(404).json({ error: `Lobby '${lobbyIdentifier}' not found` });
         }
         const lobby = lobbyRes.rows[0];
+        console.log(`[Join Debug] Found Lobby: ${lobby.id} (${lobby.name})`);
 
         // Check if user already joined
         const existingPlayerRes = await client.query('SELECT * FROM players WHERE lobby_id = $1 AND user_id = $2', [lobby.id, userId]);
