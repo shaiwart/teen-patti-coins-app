@@ -59,6 +59,17 @@
                     placeholder="Your Player Name (Optional, defaults to User Name)">
                 <button onclick="joinLobby()">Enter Lobby</button>
             </div>
+
+            <!-- My Lobbies Section -->
+            <div class="divider"></div>
+            <div class="form-group">
+                <h3>Your Lobbies</h3>
+                <div id="my-lobbies-list"
+                    style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Lobbies will be populated here -->
+                </div>
+            </div>
+
             <div class="divider"></div>
             <button class="btn-secondary" onclick="logout()">Logout</button>
         </div>

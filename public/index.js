@@ -82,6 +82,67 @@ function showDashboard() {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('dashboard-section').classList.remove('hidden');
     document.getElementById('user-name-display').innerText = currentUser.name;
+    fetchMyLobbies();
+}
+
+async function fetchMyLobbies() {
+    if (!currentUser) return;
+    try {
+        const res = await fetch(`/lobby/user?userId=${currentUser.id}`);
+        const lobbies = await res.json();
+        renderMyLobbies(lobbies);
+    } catch (e) { console.error(e); }
+}
+
+function renderMyLobbies(lobbies) {
+    const container = document.getElementById('my-lobbies-list');
+    container.innerHTML = '';
+
+    if (lobbies.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center;">No lobbies created.</div>';
+        return;
+    }
+
+    lobbies.forEach(lobby => {
+        const el = document.createElement('div');
+        el.style.background = 'rgba(255, 255, 255, 0.05)';
+        el.style.padding = '10px';
+        el.style.borderRadius = '8px';
+        el.style.display = 'flex';
+        el.style.justifyContent = 'space-between';
+        el.style.alignItems = 'center';
+
+        el.innerHTML = `
+            <div>
+                <div style="font-weight: bold;">${lobby.name}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">ID: ${lobby.id} • Boot: ₹${lobby.boot_amount}</div>
+            </div>
+            <button class="btn-small" style="background: var(--danger-color);" onclick="deleteLobby(${lobby.id})">Delete</button>
+        `;
+        container.appendChild(el);
+    });
+}
+
+async function deleteLobby(lobbyId) {
+    if (!confirm('Are you sure you want to delete this lobby? All game data will be lost.')) return;
+
+    try {
+        const res = await fetch('/lobby/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lobbyId, userId: currentUser.id })
+        });
+        const data = await res.json();
+        if (data.error) {
+            showToast(data.error);
+        } else {
+            showToast('Lobby Deleted');
+            fetchMyLobbies();
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Error deleting lobby');
+    }
 }
 
 

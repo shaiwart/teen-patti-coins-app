@@ -509,6 +509,70 @@ app.get('/lobby/state', async (req, res) => {
 
 
 
+// Get User's Lobbies
+app.get('/lobby/user', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+
+    try {
+        const result = await pool.query('SELECT * FROM lobbies WHERE admin_user_id = $1 ORDER BY created_at DESC', [userId]);
+        res.json(result.rows);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Delete Lobby
+app.delete('/lobby/delete', async (req, res) => {
+    const { lobbyId, userId } = req.body;
+    if (!userId || !lobbyId) return res.status(400).json({ error: 'Missing fields' });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Verify Admin
+        const lobbyRes = await client.query('SELECT admin_user_id FROM lobbies WHERE id = $1', [lobbyId]);
+        if (lobbyRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Lobby not found' });
+        }
+        if (lobbyRes.rows[0].admin_user_id !== userId) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Unauthorized: Only Admin can delete' });
+        }
+
+        // Cascade Delete
+        // 1. Get Game IDs to delete actions
+        const gamesRes = await client.query('SELECT id FROM games WHERE lobby_id = $1', [lobbyId]);
+        const gameIds = gamesRes.rows.map(g => g.id);
+
+        if (gameIds.length > 0) {
+            // Delete Actions
+            await client.query('DELETE FROM actions WHERE game_id = ANY($1)', [gameIds]);
+            // Delete Games
+            await client.query('DELETE FROM games WHERE lobby_id = $1', [lobbyId]);
+        }
+
+        // Delete Players
+        await client.query('DELETE FROM players WHERE lobby_id = $1', [lobbyId]);
+
+        // Delete Lobby
+        await client.query('DELETE FROM lobbies WHERE id = $1', [lobbyId]);
+
+        await client.query('COMMIT');
+        res.json({ message: 'Lobby deleted successfully' });
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error(e);
+        res.status(500).json({ error: e.message || 'Internal Server Error' });
+    } finally {
+        client.release();
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
