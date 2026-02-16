@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teen Patti Ledger - Game Lobby</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
@@ -87,7 +87,17 @@
         <div class="modal-content">
             <h2>Set Turn Order</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem;">Arrange players for the first turn.</p>
-            <div id="player-order-list" style="display: flex; flex-direction: column; gap: 8px;">
+
+            <!-- Table Preview -->
+            <div id="table-visualization" class="table-preview">
+                <!-- Tokens injected via JS -->
+                <div
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.3); font-weight: bold;">
+                    TABLE</div>
+            </div>
+
+            <div id="player-order-list"
+                style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
                 <!-- Players injected here -->
             </div>
             <button onclick="confirmStartGame()">Confirm & Start</button>

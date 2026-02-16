@@ -233,6 +233,7 @@ function renderReorderList() {
         `;
         list.appendChild(el);
     });
+    renderTableVisualization();
 }
 
 function movePlayer(index, direction) {
@@ -336,4 +337,42 @@ function showToast(msg) {
     t.innerText = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function renderTableVisualization() {
+    const container = document.getElementById('table-visualization');
+    if (!container) return;
+
+    // Clear container (No center text for minimal look)
+    container.innerHTML = '';
+
+    const total = localPlayerOrder.length;
+    const radius = 100; // px, from center
+    const centerX = 125; // half of width (250)
+    const centerY = 125; // half of height
+
+    localPlayerOrder.forEach((p, index) => {
+        // Distribute evenly. Top (Index 0) is -90 degrees.
+        const angleDeg = (index * (360 / total)) - 90;
+        const angleRad = angleDeg * (Math.PI / 180);
+
+        const x = centerX + radius * Math.cos(angleRad);
+        const y = centerY + radius * Math.sin(angleRad);
+
+        const token = document.createElement('div');
+        token.className = `player-token ${index === 0 ? 'dealer' : ''}`;
+        token.style.left = `${x}px`;
+        token.style.top = `${y}px`;
+
+        // Show first letter or index
+        token.innerText = index + 1;
+
+        // Name Label
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'player-token-name';
+        nameLabel.innerText = p.name;
+        token.appendChild(nameLabel);
+
+        container.appendChild(token);
+    });
 }

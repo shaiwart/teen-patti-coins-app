@@ -340,3 +340,52 @@ footer {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
+
+/* Round Table Visualization */
+.table-preview {
+    width: 250px;
+    height: 250px;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Thin ring */
+    border-radius: 50%;
+    position: relative;
+    margin: 20px auto;
+    box-shadow: none; 
+}
+
+.player-token {
+    width: 44px;
+    height: 44px;
+    background: #e2e8f0; /* Light grey like reference */
+    color: #0f172a;
+    border-radius: 50%;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1rem;
+    box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    border: none;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 5;
+}
+
+.player-token.dealer {
+    background: #f59e0b; /* Keep gold for dealer/turn 1 */
+    color: white;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+    z-index: 10;
+}
+
+.player-token-name {
+    position: absolute;
+    bottom: -25px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    color: var(--text-muted);
+    background: transparent;
+    padding: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
