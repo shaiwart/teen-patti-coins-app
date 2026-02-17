@@ -544,6 +544,7 @@ app.post('/game/action', async (req, res) => {
 
         if (gameEnded) {
             res.json({ message: 'Game ended. Winner declared.', winner, gameEnded: true });
+            io.to(`lobby_${lobbyId}`).emit('game_over', { winner, pot: game.pot + deduction });
         } else {
             res.json({ message: 'Action successful', gameEnded: false });
         }
@@ -603,6 +604,10 @@ app.post('/game/end', async (req, res) => {
         res.json({ message: 'Game ended successfully' });
 
         // --- WebSocket Broadcast ---
+        io.to(`lobby_${game.lobby_id}`).emit('game_over', {
+            winner: { id: winnerId, name: (await pool.query('SELECT name FROM users WHERE id = (SELECT user_id FROM players WHERE id=$1)', [winnerId])).rows[0]?.name || 'Player' },
+            pot: game.pot
+        });
         broadcastLobbyState(game.lobby_id);
 
     } catch (e) {

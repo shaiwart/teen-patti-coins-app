@@ -57,6 +57,24 @@ function initSocket() {
         console.log('Received Game Update', data);
         render(data);
     });
+
+    socket.on('game_over', (data) => {
+        console.log('Game Over Event', data);
+        const winnerName = data.winner.name || "Unknown Player";
+        const potAmount = data.pot;
+
+        // Show Overlay
+        const overlay = document.getElementById('winner-overlay');
+        document.getElementById('winner-name').innerText = winnerName;
+        document.getElementById('winner-pot').innerText = `₹${potAmount}`;
+
+        overlay.classList.remove('hidden');
+
+        // Hide after 5 seconds
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+        }, 5000);
+    });
 }
 
 async function fetchInitialState() {

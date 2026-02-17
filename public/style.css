@@ -2,7 +2,8 @@
     --bg-color: #0f172a;
     --card-bg: rgba(30, 41, 59, 0.7);
     --primary-color: #6366f1;
-    --accent-color: #f59e0b; /* Gold */
+    --accent-color: #f59e0b;
+    /* Gold */
     --success-color: #10b981;
     --danger-color: #ef4444;
     --text-color: #f8fafc;
@@ -31,11 +32,13 @@ body {
 
 .app-container {
     width: 100%;
-    max-width: 480px; /* Mobile first constrained width */
+    max-width: 480px;
+    /* Mobile first constrained width */
     min-height: 100vh;
     background: transparent;
     position: relative;
-    padding-bottom: 80px; /* Space for footer */
+    padding-bottom: 80px;
+    /* Space for footer */
 }
 
 /* Screens */
@@ -190,7 +193,7 @@ header {
 .player-card.winner {
     border-color: var(--accent-color);
     background: rgba(245, 158, 11, 0.2);
-     box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
 }
 
 
@@ -217,9 +220,17 @@ header {
     font-weight: 600;
 }
 
-.status-blind { color: #60a5fa; }
-.status-seen { color: #a78bfa; }
-.status-packed { color: #94a3b8; }
+.status-blind {
+    color: #60a5fa;
+}
+
+.status-seen {
+    color: #a78bfa;
+}
+
+.status-packed {
+    color: #94a3b8;
+}
 
 /* Footer Actions */
 footer {
@@ -258,11 +269,30 @@ footer {
     letter-spacing: 1px;
 }
 
-.btn-fold { background: #334155; }
-.btn-blind { background: #6366f1; }
-.btn-seen { background: #8b5cf6; } /* Purple */
-.btn-raise { background: #f59e0b; color: #fff; } /* Gold */
-.btn-show { background: #ec4899; } /* Pink */
+.btn-fold {
+    background: #334155;
+}
+
+.btn-blind {
+    background: #6366f1;
+}
+
+.btn-seen {
+    background: #8b5cf6;
+}
+
+/* Purple */
+.btn-raise {
+    background: #f59e0b;
+    color: #fff;
+}
+
+/* Gold */
+.btn-show {
+    background: #ec4899;
+}
+
+/* Pink */
 
 /* FAB */
 .fab {
@@ -346,17 +376,19 @@ footer {
     width: 250px;
     height: 250px;
     background: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.2); /* Thin ring */
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    /* Thin ring */
     border-radius: 50%;
     position: relative;
     margin: 20px auto;
-    box-shadow: none; 
+    box-shadow: none;
 }
 
 .player-token {
     width: 44px;
     height: 44px;
-    background: #e2e8f0; /* Light grey like reference */
+    background: #e2e8f0;
+    /* Light grey like reference */
     color: #0f172a;
     border-radius: 50%;
     position: absolute;
@@ -365,7 +397,7 @@ footer {
     align-items: center;
     font-weight: bold;
     font-size: 1rem;
-    box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
     border: none;
     transform: translate(-50%, -50%);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -373,19 +405,91 @@ footer {
 }
 
 .player-token.dealer {
-    background: #f59e0b; /* Keep gold for dealer/turn 1 */
+    background: #f59e0b;
+    /* Keep gold for dealer/turn 1 */
     color: white;
     box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
     z-index: 10;
 }
 
-.player-token-name {
-    position: absolute;
-    bottom: -25px;
-    font-size: 0.75rem;
-    white-space: nowrap;
+padding: 0;
+text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Winner Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.winner-content {
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.winner-content h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    background: linear-gradient(to right, #f59e0b, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+}
+
+.winner-content h2 {
+    font-size: 2.5rem;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.winner-content p {
     color: var(--text-muted);
-    background: transparent;
-    padding: 0;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    font-size: 1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.winner-pot {
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--success-color);
+    text-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+    margin-top: 10px;
+}
+
+.confetti {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(-20px);
+    }
 }
