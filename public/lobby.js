@@ -105,6 +105,20 @@ function render(data) {
     ui.pot.innerText = `₹${game ? game.pot : 0}`;
     ui.stake.innerText = `₹${game ? game.current_stake : lobby.boot_amount} (Boot: ${lobby.boot_amount})`;
 
+    // Show Last Winner
+    if (data.lastWinner) {
+        let lastWinnerEl = document.getElementById('last-winner-display');
+        if (!lastWinnerEl) {
+            lastWinnerEl = document.createElement('div');
+            lastWinnerEl.id = 'last-winner-display';
+            lastWinnerEl.style.color = 'var(--accent-color)';
+            lastWinnerEl.style.fontSize = '0.9rem';
+            lastWinnerEl.style.marginTop = '5px';
+            document.querySelector('.stake-info').appendChild(lastWinnerEl);
+        }
+        lastWinnerEl.innerText = `Last Winner: 🏆 ${data.lastWinner}`;
+    }
+
     // 2. Players
     ui.playersContainer.innerHTML = '';
 
@@ -127,6 +141,9 @@ function render(data) {
             <div class="player-info">
                 <span class="player-name">${p.name} ${isMe ? '(YOU)' : ''} ${isTurn ? '🎯' : ''} ${isWinner ? '🏆' : ''}</span>
                 <span class="player-balance">₹${p.wallet_balance}</span>
+                <span class="player-stats" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                    Played: ${p.games_played || 0} | Won: ${p.games_won || 0}
+                </span>
             </div>
             <div class="player-status status-${p.game_status?.toLowerCase() || 'blind'}">
                 ${p.game_status || 'WAITING'}

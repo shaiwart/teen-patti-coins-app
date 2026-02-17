@@ -107,7 +107,22 @@ const broadcastLobbyState = async (lobbyId) => {
         const gameRes = await pool.query(`SELECT * FROM games WHERE lobby_id = $1 AND status != 'COMPLETED'`, [lobbyId]);
         const game = gameRes.rows[0] || null;
 
-        const statePayload = { lobby, players, game };
+        // Get Last Winner
+        const lastWinnerRes = await pool.query(
+            `SELECT u.name FROM games g 
+             JOIN players p ON g.winner_id = p.id 
+             JOIN users u ON p.user_id = u.id 
+             WHERE g.lobby_id = $1 AND g.status = 'COMPLETED' 
+             ORDER BY g.created_at DESC LIMIT 1`,
+            [lobbyId]
+        );
+
+        const statePayload = {
+            lobby,
+            players,
+            game,
+            lastWinner: lastWinnerRes.rows[0]?.name || null
+        };
 
         io.to(`lobby_${lobbyId}`).emit('game_update', statePayload);
         console.log(`Broadcasted update to lobby_${lobbyId}`);
@@ -190,8 +205,9 @@ app.post('/game/start', async (req, res) => {
         if (playerOrder && Array.isArray(playerOrder) && playerOrder.length > 0) {
             for (let i = 0; i < playerOrder.length; i++) {
                 const playerId = playerOrder[i];
+                // Update turn_order AND increment games_played
                 await client.query(
-                    'UPDATE players SET turn_order = $1 WHERE id = $2 AND lobby_id = $3',
+                    'UPDATE players SET turn_order = $1, games_played = games_played + 1 WHERE id = $2 AND lobby_id = $3',
                     [i + 1, playerId, lobbyId]
                 );
             }
@@ -504,7 +520,7 @@ app.post('/game/action', async (req, res) => {
                 // But we already updated DB. Let's fetch updated game or calc:
                 const finalPot = game.pot + deduction;
 
-                await client.query(`UPDATE players SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [finalPot, winner.id]);
+                await client.query(`UPDATE players SET wallet_balance = wallet_balance + $1, games_won = games_won + 1 WHERE id = $2`, [finalPot, winner.id]);
                 await client.query(`UPDATE games SET status = 'COMPLETED', winner_id = $1 WHERE id = $2`, [winner.id, game.id]);
 
                 // Reset statuses
@@ -591,8 +607,8 @@ app.post('/game/end', async (req, res) => {
             return res.status(403).json({ error: 'Only Lobby Admin can end the game' });
         }
 
-        // Credit Pot to Winner
-        await client.query(`UPDATE players SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [game.pot, winnerId]);
+        // Credit Pot to Winner and Increment Wins
+        await client.query(`UPDATE players SET wallet_balance = wallet_balance + $1, games_won = games_won + 1 WHERE id = $2`, [game.pot, winnerId]);
 
         // Mark Game Completed
         await client.query(`UPDATE games SET status = 'COMPLETED', winner_id = $1 WHERE id = $2`, [winnerId, gameId]);
