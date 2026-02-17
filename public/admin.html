@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teen Patti - Super Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #6366f1;
+            --success-color: #10b981;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 10px 0;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: var(--success-color);
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-overlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        <div
+            style="background: var(--card-bg); padding: 40px; border-radius: 16px; width: 300px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+            <h2 style="margin-top: 0;">Admin Access</h2>
+            <input type="email" id="admin-email" placeholder="Email"
+                style="width: 100%; padding: 12px; margin: 10px 0; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px;">
+            <input type="password" id="admin-password" placeholder="Password"
+                style="width: 100%; padding: 12px; margin: 10px 0; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px;">
+            <button onclick="login()"
+                style="width: 100%; padding: 12px; background: var(--accent-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Login</button>
+            <div id="login-error" style="color: #ef4444; margin-top: 10px; font-size: 0.9rem;"></div>
+        </div>
+    </div>
+
+    <h1><span class="live-indicator"></span> System Overview</h1>
+
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="totalUsers">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Lobbies</div>
+            <div class="stat-value" id="totalLobbies">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Games</div>
+            <div class="stat-value" id="activeGames">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Live Connections</div>
+            <div class="stat-value" id="liveSockets">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Cash in Play</div>
+            <div class="stat-value" id="totalPot">₹0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Server Uptime</div>
+            <div class="stat-value" id="uptime" style="font-size: 1.5rem; margin-top: 25px;">-</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>

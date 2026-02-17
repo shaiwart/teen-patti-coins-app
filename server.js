@@ -35,6 +35,8 @@ pool.query('SELECT NOW()', (err, res) => {
     }
 });
 
+const ADMIN_SECRET = 'super-secret-admin-key'; // Simple auth for MVP
+
 // --- Socket.IO Logic ---
 io.on('connection', (socket) => {
     console.log('A user connected');
@@ -44,10 +46,53 @@ io.on('connection', (socket) => {
         console.log(`Socket joined lobby_${lobbyId}`);
     });
 
+    socket.on('join_admin_dashboard', async (userId) => {
+        // Simple verification: Check if user exists and is SUPER_ADMIN
+        try {
+            const userRes = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
+            if (userRes.rows.length > 0 && userRes.rows[0].role === 'SUPER_ADMIN') {
+                socket.join('admin_dashboard');
+                console.log(`Super Admin ${userId} joined dashboard`);
+                // Send immediate stats
+                broadcastAdminStats();
+            } else {
+                console.log(`Unauthorized dashboard join attempt by ${userId}`);
+            }
+        } catch (e) {
+            console.error('Socket Admin Auth Error:', e);
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected');
     });
 });
+
+// Helper to broadcast admin stats
+const broadcastAdminStats = async () => {
+    try {
+        const usersRes = await pool.query('SELECT COUNT(*) FROM users');
+        const lobbiesRes = await pool.query('SELECT COUNT(*) FROM lobbies');
+        const activeGamesRes = await pool.query("SELECT COUNT(*) FROM games WHERE status = 'ACTIVE'");
+        const totalPotRes = await pool.query("SELECT SUM(pot) FROM games WHERE status = 'ACTIVE'");
+
+        const stats = {
+            totalUsers: parseInt(usersRes.rows[0].count),
+            totalLobbies: parseInt(lobbiesRes.rows[0].count),
+            activeGames: parseInt(activeGamesRes.rows[0].count),
+            totalPot: parseInt(totalPotRes.rows[0].sum || 0),
+            liveSockets: io.engine.clientsCount,
+            uptime: process.uptime()
+        };
+
+        io.to('admin_dashboard').emit('admin_stats_update', stats);
+    } catch (e) {
+        console.error('Error broadcasting admin stats:', e);
+    }
+};
+
+// Broadcast stats every 5 seconds
+setInterval(broadcastAdminStats, 5000);
 
 // Helper to broadcast updates
 const broadcastLobbyState = async (lobbyId) => {
@@ -634,6 +679,57 @@ app.delete('/lobby/delete', async (req, res) => {
         res.status(500).json({ error: e.message || 'Internal Server Error' });
     } finally {
         client.release();
+    }
+});
+
+// Admin Stats API
+app.get('/admin/stats', async (req, res) => {
+    // Auth Check: Look for user ID in header
+    const userId = req.headers['x-admin-userid'];
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+        // Verify User Role
+        const userRes = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0 || userRes.rows[0].role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Forbidden: Super Admin access required' });
+        }
+
+        const usersRes = await pool.query('SELECT COUNT(*) FROM users');
+        const lobbiesRes = await pool.query('SELECT COUNT(*) FROM lobbies');
+        const activeGamesRes = await pool.query("SELECT COUNT(*) FROM games WHERE status = 'ACTIVE'");
+        const totalPotRes = await pool.query("SELECT SUM(pot) FROM games WHERE status = 'ACTIVE'");
+
+        res.json({
+            totalUsers: parseInt(usersRes.rows[0].count),
+            totalLobbies: parseInt(lobbiesRes.rows[0].count),
+            activeGames: parseInt(activeGamesRes.rows[0].count),
+            totalPot: parseInt(totalPotRes.rows[0].sum || 0),
+            liveSockets: io.engine.clientsCount,
+            uptime: process.uptime()
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Admin Login
+app.post('/admin/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const userRes = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
+        if (userRes.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+
+        const user = userRes.rows[0];
+        if (user.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Access Denied: You are not a Super Admin' });
+        }
+
+        delete user.password;
+        res.json({ user, token: user.id }); // Using ID as token for MVP
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
