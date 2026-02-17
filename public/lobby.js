@@ -73,7 +73,7 @@ function initSocket() {
         // Hide after 5 seconds
         setTimeout(() => {
             overlay.classList.add('hidden');
-        }, 5000);
+        }, 3000);
     });
 }
 
