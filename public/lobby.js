@@ -5,9 +5,7 @@ let currentLobbyId = null;
 let currentUser = null;
 let currentPlayerId = null;
 let gameState = null;
-let pollInterval = null;
-
-const POLL_RATE_MS = 2000;
+let socket = null; // Socket instance
 
 // DOM Elements
 const ui = {
@@ -42,17 +40,26 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    startPolling();
+    initSocket();
+    fetchInitialState();
 });
 
-
 // Logic
-function startPolling() {
-    pollState();
-    pollInterval = setInterval(pollState, POLL_RATE_MS);
+function initSocket() {
+    socket = io();
+
+    socket.on('connect', () => {
+        console.log('Connected to WebSocket');
+        socket.emit('join_lobby', currentLobbyId);
+    });
+
+    socket.on('game_update', (data) => {
+        console.log('Received Game Update', data);
+        render(data);
+    });
 }
 
-async function pollState() {
+async function fetchInitialState() {
     if (!currentLobbyId) return;
     try {
         const res = await fetch(`/lobby/state?lobbyId=${currentLobbyId}`);

@@ -2,9 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -29,6 +34,42 @@ pool.query('SELECT NOW()', (err, res) => {
         console.log('Connected to Database at:', res.rows[0].now);
     }
 });
+
+// --- Socket.IO Logic ---
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    socket.on('join_lobby', (lobbyId) => {
+        socket.join(`lobby_${lobbyId}`);
+        console.log(`Socket joined lobby_${lobbyId}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
+// Helper to broadcast updates
+const broadcastLobbyState = async (lobbyId) => {
+    try {
+        // Fetch fresh state (Reuse logic from /lobby/state)
+        const lobbyRes = await pool.query('SELECT * FROM lobbies WHERE id = $1', [lobbyId]);
+        const lobby = lobbyRes.rows[0];
+
+        const playersRes = await pool.query('SELECT * FROM players WHERE lobby_id = $1 ORDER BY turn_order ASC', [lobbyId]);
+        const players = playersRes.rows;
+
+        const gameRes = await pool.query(`SELECT * FROM games WHERE lobby_id = $1 AND status != 'COMPLETED'`, [lobbyId]);
+        const game = gameRes.rows[0] || null;
+
+        const statePayload = { lobby, players, game };
+
+        io.to(`lobby_${lobbyId}`).emit('game_update', statePayload);
+        console.log(`Broadcasted update to lobby_${lobbyId}`);
+    } catch (e) {
+        console.error('Error broadcasting state:', e);
+    }
+};
 
 // API Routes Placeholder
 app.get('/health', (req, res) => {
@@ -102,9 +143,6 @@ app.post('/game/start', async (req, res) => {
 
         // If playerOrder is provided, update turn_order
         if (playerOrder && Array.isArray(playerOrder) && playerOrder.length > 0) {
-            // Validate: Ensure all IDs belong to this lobby? 
-            // For MVP, just update those that match. 
-            // We expect frontend to send all active player IDs in order.
             for (let i = 0; i < playerOrder.length; i++) {
                 const playerId = playerOrder[i];
                 await client.query(
@@ -135,7 +173,6 @@ app.post('/game/start', async (req, res) => {
         }
 
         // Create Game
-        // First player in list gets the turn initially. 
         const firstTurnPlayerId = players[0].id;
 
         const gameRes = await client.query(
@@ -149,6 +186,9 @@ app.post('/game/start', async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ message: 'Game started', game: gameRes.rows[0] });
+
+        // --- WebSocket Broadcast ---
+        broadcastLobbyState(lobbyId);
 
     } catch (e) {
         await client.query('ROLLBACK');
@@ -263,6 +303,9 @@ app.post('/lobby/join', async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ message: 'Joined successfully', player: newPlayer.rows[0], lobby });
+
+        // --- WebSocket Broadcast ---
+        broadcastLobbyState(lobby.id);
 
     } catch (e) {
         await client.query('ROLLBACK');
@@ -434,6 +477,9 @@ app.post('/game/action', async (req, res) => {
         await client.query('COMMIT');
         res.json({ message: 'Action successful' });
 
+        // --- WebSocket Broadcast ---
+        broadcastLobbyState(lobbyId);
+
     } catch (e) {
         await client.query('ROLLBACK');
         console.error(e);
@@ -484,6 +530,9 @@ app.post('/game/end', async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ message: 'Game ended successfully' });
+
+        // --- WebSocket Broadcast ---
+        broadcastLobbyState(game.lobby_id);
 
     } catch (e) {
         await client.query('ROLLBACK');
@@ -588,7 +637,7 @@ app.delete('/lobby/delete', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
 
