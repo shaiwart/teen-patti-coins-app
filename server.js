@@ -482,45 +482,71 @@ app.post('/game/action', async (req, res) => {
         );
 
         // 5. Turn Rotation (If Game not ended/show pending)
+        let gameEnded = false;
+        let winner = null;
+
         if (nextStatus === 'ACTIVE') {
-            // Get all active players (Not PACKED)
-            // Need to select ONLY players who are in this game (active in lobby + not packed)
-            // Ordering by turn_order
-            const allPlayers = await client.query(
-                `SELECT * FROM players WHERE lobby_id = $1 AND is_active = TRUE ORDER BY turn_order ASC`,
+            // Check for Auto-Win (Only 1 active player left)
+            // Get all players who are NOT packed
+            const activePlayersRes = await client.query(
+                `SELECT * FROM players WHERE lobby_id = $1 AND is_active = TRUE AND game_status != 'PACKED'`,
                 [lobbyId]
             );
+            const activePlayers = activePlayersRes.rows;
 
-            let currentIndex = allPlayers.rows.findIndex(p => p.id === playerId);
-            let nextPlayer = null;
-            let loopCount = 0;
+            if (activePlayers.length === 1) {
+                // Auto-End Game
+                gameEnded = true;
+                winner = activePlayers[0];
 
-            // Find next player who is NOT PACKED
-            while (!nextPlayer && loopCount < allPlayers.rows.length) {
-                currentIndex = (currentIndex + 1) % allPlayers.rows.length;
-                const p = allPlayers.rows[currentIndex];
-                if (p.game_status !== 'PACKED') {
-                    nextPlayer = p;
-                }
-                loopCount++;
-            }
+                // Credit Pot
+                // NOTE: pot here is old game.pot. We need updated pot (game.pot + deduction).
+                // But we already updated DB. Let's fetch updated game or calc:
+                const finalPot = game.pot + deduction;
 
-            if (nextPlayer) {
-                await client.query(`UPDATE games SET current_turn_player_id = $1 WHERE id = $2`, [nextPlayer.id, game.id]);
+                await client.query(`UPDATE players SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [finalPot, winner.id]);
+                await client.query(`UPDATE games SET status = 'COMPLETED', winner_id = $1 WHERE id = $2`, [winner.id, game.id]);
+
+                // Reset statuses
+                await client.query(`UPDATE players SET game_status = 'BLIND' WHERE lobby_id = $1`, [lobbyId]);
             } else {
-                // Should not happen if game logic checks >1 player, or everyone folded -> winner declared automatically?
-                // Requirement doesn't explicitly handle "Everyone folded but one". 
-                // Usually that implies last man standing wins immediately.
-                // For now, simpler rotation.
+                // Normal Rotation
+                // Get all active players (including packed? No, rotation skips packed)
+                // We need the full list to determine order, but skip packed for next turn
+                const allPlayers = await client.query(
+                    `SELECT * FROM players WHERE lobby_id = $1 AND is_active = TRUE ORDER BY turn_order ASC`,
+                    [lobbyId]
+                );
+
+                let currentIndex = allPlayers.rows.findIndex(p => p.id === playerId);
+                let nextPlayer = null;
+                let loopCount = 0;
+
+                while (!nextPlayer && loopCount < allPlayers.rows.length) {
+                    currentIndex = (currentIndex + 1) % allPlayers.rows.length;
+                    const p = allPlayers.rows[currentIndex];
+                    if (p.game_status !== 'PACKED') {
+                        nextPlayer = p;
+                    }
+                    loopCount++;
+                }
+
+                if (nextPlayer) {
+                    await client.query(`UPDATE games SET current_turn_player_id = $1 WHERE id = $2`, [nextPlayer.id, game.id]);
+                }
             }
         } else {
             // Game is SHOW_PENDING. Turn stops.
-            // current_turn_player_id can stay as is or null.
             await client.query(`UPDATE games SET current_turn_player_id = NULL WHERE id = $1`, [game.id]);
         }
 
         await client.query('COMMIT');
-        res.json({ message: 'Action successful' });
+
+        if (gameEnded) {
+            res.json({ message: 'Game ended. Winner declared.', winner, gameEnded: true });
+        } else {
+            res.json({ message: 'Action successful', gameEnded: false });
+        }
 
         // --- WebSocket Broadcast ---
         broadcastLobbyState(lobbyId);
