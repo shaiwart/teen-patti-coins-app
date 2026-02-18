@@ -1,4 +1,5 @@
-const socket = io();
+const API_BASE_URL = 'http://localhost:3000';
+const socket = io('http://localhost:3000');
 let adminUser = null;
 
 // DOM
@@ -22,7 +23,7 @@ async function login() {
     errorMsg.innerText = '';
 
     try {
-        const res = await fetch('/admin/login', {
+        const res = await fetch(`${API_BASE_URL}/admin/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -55,7 +56,7 @@ async function login() {
 async function fetchStats() {
     if (!adminUser) return;
     try {
-        const res = await fetch('/admin/stats', {
+        const res = await fetch(`${API_BASE_URL}/admin/stats`, {
             headers: { 'x-admin-userid': adminUser.id }
         });
 
@@ -74,7 +75,8 @@ async function fetchStats() {
 
 function logout() {
     localStorage.removeItem('adminUser');
-    location.reload();
+    // location.reload(); // Reload might just refresh current page which is admin.html
+    window.location.href = 'index.html'; // Or just reload if staying on admin page
 }
 
 function joinSocket() {

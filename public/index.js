@@ -1,5 +1,6 @@
 // index.js
 
+const API_BASE_URL = 'http://localhost:3000';
 let currentUser = null;
 
 // Init
@@ -27,8 +28,9 @@ async function login() {
     const password = document.getElementById('login-password').value;
     if (!email || !password) return showToast('Enter email and password');
 
+
     try {
-        const res = await fetch('/auth/login', {
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -49,7 +51,7 @@ async function register() {
     if (!name || !email || !password) return showToast('Fill all fields');
 
     try {
-        const res = await fetch('/auth/register', {
+        const res = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password })
@@ -88,7 +90,7 @@ function showDashboard() {
 async function fetchMyLobbies() {
     if (!currentUser) return;
     try {
-        const res = await fetch(`/lobby/user?userId=${currentUser.id}`);
+        const res = await fetch(`${API_BASE_URL}/lobby/user?userId=${currentUser.id}`);
         const lobbies = await res.json();
         renderMyLobbies(lobbies);
     } catch (e) { console.error(e); }
@@ -127,7 +129,7 @@ async function deleteLobby(lobbyId) {
     if (!confirm('Are you sure you want to delete this lobby? All game data will be lost.')) return;
 
     try {
-        const res = await fetch('/lobby/delete', {
+        const res = await fetch(`${API_BASE_URL}/lobby/delete`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lobbyId, userId: currentUser.id })
@@ -154,7 +156,7 @@ async function createLobby() {
     if (!name || !boot) return showToast('Enter Name and Boot Amount');
 
     try {
-        const res = await fetch('/lobby/create', {
+        const res = await fetch(`${API_BASE_URL}/lobby/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -166,7 +168,7 @@ async function createLobby() {
         });
         const data = await res.json();
         if (data.id) {
-            window.location.href = `/lobby.html?lobbyId=${data.id}`;
+            window.location.href = `lobby.html?lobbyId=${data.id}`;
         } else {
             showToast(data.error || 'Failed to create lobby');
         }
@@ -182,7 +184,7 @@ async function joinLobby() {
     if (!title) return showToast('Enter Lobby ID or Name');
 
     try {
-        const res = await fetch('/lobby/join', {
+        const res = await fetch(`${API_BASE_URL}/lobby/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -199,7 +201,7 @@ async function joinLobby() {
             // Backend returns { message: '...', player: ..., lobby: ... }
             // or { error: ... }
             if (data.lobby) {
-                window.location.href = `/lobby.html?lobbyId=${data.lobby.id}`;
+                window.location.href = `lobby.html?lobbyId=${data.lobby.id}`;
             } else {
                 showToast(data.message || 'Error joining');
             }

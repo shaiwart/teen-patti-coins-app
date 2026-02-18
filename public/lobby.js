@@ -1,6 +1,6 @@
 // lobby.js
 
-const API_URL = '';
+const API_URL = 'http://localhost:3000';
 let currentLobbyId = null;
 let currentUser = null;
 let currentPlayerId = null;
@@ -29,14 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
         alert('Please login first');
-        window.location.href = '/';
+        window.location.href = 'index.html';
         return;
     }
     currentUser = JSON.parse(storedUser);
 
     if (!currentLobbyId) {
         alert('No Lobby ID found. Redirecting to home.');
-        window.location.href = '/';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Logic
 function initSocket() {
-    socket = io();
+    socket = io(API_URL);
 
     socket.on('connect', () => {
         console.log('Connected to WebSocket');
@@ -80,13 +80,13 @@ function initSocket() {
 async function fetchInitialState() {
     if (!currentLobbyId) return;
     try {
-        const res = await fetch(`/lobby/state?lobbyId=${currentLobbyId}`);
+        const res = await fetch(`${API_URL}/lobby/state?lobbyId=${currentLobbyId}`);
         const data = await res.json();
 
         if (data.error) {
             if (data.error === 'Lobby not found') {
                 alert('Lobby not found!');
-                window.location.href = '/';
+                window.location.href = 'index.html';
             }
             return;
         }
@@ -291,7 +291,7 @@ async function confirmStartGame() {
     if (!currentLobbyId) return;
     try {
         const playerOrderIds = localPlayerOrder.map(p => p.id);
-        const res = await fetch('/game/start', {
+        const res = await fetch(`${API_URL}/game/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lobbyId: currentLobbyId, playerOrder: playerOrderIds })
@@ -300,7 +300,7 @@ async function confirmStartGame() {
         if (data.error) alert(data.error);
         else {
             closeStartGameModal();
-            pollState();
+            fetchInitialState();
         }
     } catch (e) { console.error(e); }
 }
@@ -326,7 +326,7 @@ async function sendAction(type) {
     }
 
     try {
-        const res = await fetch('/game/action', {
+        const res = await fetch(`${API_URL}/game/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -335,7 +335,7 @@ async function sendAction(type) {
         if (data.error) alert(data.error);
         else {
             showToast('Action Sent');
-            pollState();
+            fetchInitialState();
         }
     } catch (e) { console.error(e); }
 }
@@ -343,14 +343,14 @@ async function sendAction(type) {
 async function endGame(winnerId) {
     if (!gameState) return;
     try {
-        const res = await fetch('/game/end', {
+        const res = await fetch(`${API_URL}/game/end`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ gameId: gameState.id, winnerId, userId: currentUser.id })
         });
         const data = await res.json();
         if (data.error) alert(data.error);
-        else pollState();
+        else fetchInitialState();
     } catch (e) { console.error(e); }
 }
 
