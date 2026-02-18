@@ -6,6 +6,21 @@ let currentUser = null;
 let currentPlayerId = null;
 let gameState = null;
 let socket = null; // Socket instance
+let lastGameState = null; // To track changes for sounds
+
+const sounds = {
+    turn: new Audio('assets/sounds/ding.mp3'),
+    bet: new Audio('assets/sounds/coins-clinking.mp3'),
+    fold: new Audio('assets/sounds/whoosh.mp3'),
+    win: new Audio('assets/sounds/win-sound-2.mp3')
+};
+
+function playSound(key) {
+    if (sounds[key]) {
+        sounds[key].currentTime = 0;
+        sounds[key].play().catch(e => console.log('Audio play failed (interaction required):', e));
+    }
+}
 
 // DOM Elements
 const ui = {
@@ -63,6 +78,9 @@ function initSocket() {
         const winnerName = data.winner.name || "Unknown Player";
         const potAmount = data.pot;
 
+        // Play Win Sound
+        playSound('win');
+
         // Show Overlay
         const overlay = document.getElementById('winner-overlay');
         document.getElementById('winner-name').innerText = winnerName;
@@ -73,7 +91,7 @@ function initSocket() {
         // Hide after 5 seconds
         setTimeout(() => {
             overlay.classList.add('hidden');
-        }, 3000);
+        }, 5000); // Extended to 5s to match sound
     });
 }
 
@@ -97,6 +115,25 @@ async function fetchInitialState() {
 
 function render(data) {
     const { lobby, players, game } = data;
+
+    // Sound Logic
+    if (game && lastGameState) {
+        // 1. Turn Change (My Turn)
+        if (game.current_turn_player_id !== lastGameState.current_turn_player_id &&
+            game.current_turn_player_id === currentPlayerId) {
+            playSound('turn');
+        }
+
+        // 2. Pot Increase (Bet/Chaal)
+        if (game.pot > lastGameState.pot) {
+            playSound('bet');
+        }
+
+        // 3. Fold (Active players decreased?) - logic bit complex to track diff, skip for MVP or check specific action response if possible.
+        // We can just rely on 'bet' sound for money into pot.
+    }
+    lastGameState = game;
+
     gameState = game;
     currentPlayers = players; // Store for re-ordering features
 
@@ -318,6 +355,8 @@ async function sendAction(type) {
         playerId: currentPlayerId,
         actionType: type
     };
+
+    if (type === 'FOLD') playSound('fold'); // Immediate feedback for self fold
 
     if (type === 'RAISE') {
         const amt = document.getElementById('raise-amount').value;
