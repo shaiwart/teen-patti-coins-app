@@ -1,6 +1,8 @@
 // index.js
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+    ? 'http://localhost:3000'
+    : ''; // Relative path for production (Railway)
 let currentUser = null;
 
 // Init

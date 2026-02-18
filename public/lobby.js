@@ -1,6 +1,8 @@
 // lobby.js
 
-const API_URL = 'http://localhost:3000';
+const API_URL = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+    ? 'http://localhost:3000'
+    : ''; // Relative path for production
 let currentLobbyId = null;
 let currentUser = null;
 let currentPlayerId = null;

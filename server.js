@@ -23,12 +23,14 @@ app.use(bodyParser.json());
 app.use(express.static('public')); // Serve frontend files
 
 // Database Connection
+// Database Connection
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'teen-patti-app-v2', // Default database to connect to initially, might change if we create a specific one
-    password: '123',
-    port: 5432,
+    connectionString: process.env.DATABASE_URL, // Priortize full URL (Railway provides this)
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'teen-patti-app-v2',
+    password: process.env.DB_PASSWORD || '123',
+    port: process.env.DB_PORT || 5432,
 });
 
 // Test DB Connection

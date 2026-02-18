@@ -1,5 +1,7 @@
-const API_BASE_URL = 'http://localhost:3000';
-const socket = io('http://localhost:3000');
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+    ? 'http://localhost:3000'
+    : '';
+const socket = io(API_BASE_URL);
 let adminUser = null;
 
 // DOM
