@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS players (
     is_active BOOLEAN DEFAULT TRUE,
     turn_order INTEGER, -- To maintain turn sequence
     game_status VARCHAR(20) DEFAULT 'BLIND', -- BLIND, SEEN, PACKED
+    games_played INTEGER DEFAULT 0,
+    games_won INTEGER DEFAULT 0,
     UNIQUE(lobby_id, name),
     UNIQUE(lobby_id, user_id)
 );
