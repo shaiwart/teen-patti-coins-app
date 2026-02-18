@@ -9,7 +9,7 @@ let socket = null; // Socket instance
 
 // DOM Elements
 const ui = {
-    pot: document.getElementById('pot-amount'),
+    pot: document.getElementById('pot-value-text'),
     stake: document.getElementById('current-stake'),
     playersContainer: document.getElementById('players-container'),
     statusBar: document.getElementById('status-bar'),

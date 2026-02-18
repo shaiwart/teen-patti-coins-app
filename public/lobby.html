@@ -7,6 +7,7 @@
     <title>Teen Patti Ledger - Game Lobby</title>
     <link rel="stylesheet" href="style.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/chip-single.png">
 </head>
 
 <body>
@@ -22,7 +23,11 @@
                 </div>
                 <div class="pot-container">
                     <div class="label">CURRENT POT</div>
-                    <div class="value" id="pot-amount">₹0</div>
+                    <div class="value" id="pot-amount"
+                        style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <img src="assets/chip-stack.png" alt="Chips" style="width: 24px; height: 24px;">
+                        <span id="pot-value-text">₹0</span>
+                    </div>
                 </div>
                 <div class="stake-info">
                     Current Stake: <span id="current-stake">₹0</span>
