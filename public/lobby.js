@@ -91,6 +91,11 @@ function initSocket() {
         // Hide after 5 seconds
         setTimeout(() => {
             overlay.classList.add('hidden');
+            // Stop sound
+            if (sounds['win']) {
+                sounds['win'].pause();
+                sounds['win'].currentTime = 0;
+            }
         }, 5000); // Extended to 5s to match sound
     });
 }
