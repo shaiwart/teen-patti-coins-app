@@ -116,6 +116,10 @@ async function fetchInitialState() {
 function render(data) {
     const { lobby, players, game } = data;
 
+    // Identify My Player ID from the list
+    const myPlayer = players.find(p => p.user_id === currentUser.id);
+    currentPlayerId = myPlayer ? myPlayer.id : null;
+
     // Sound Logic
     if (game && lastGameState) {
         // 1. Turn Change (My Turn)
@@ -159,9 +163,9 @@ function render(data) {
     // 2. Players
     ui.playersContainer.innerHTML = '';
 
-    // Identify My Player ID from the list based on currentUser.id
-    const myPlayer = players.find(p => p.user_id === currentUser.id);
-    currentPlayerId = myPlayer ? myPlayer.id : null;
+    // Identify My Player ID from the list based on currentUser.id (Already done at top)
+    // const myPlayer = players.find(p => p.user_id === currentUser.id);
+    // currentPlayerId = myPlayer ? myPlayer.id : null;
 
     players.forEach(p => {
         const isTurn = game && game.status === 'ACTIVE' && game.current_turn_player_id === p.id;
