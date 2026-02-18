@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
+const { runSchema } = require('./init-db');
 
 const app = express();
 const server = http.createServer(app);
@@ -787,8 +788,16 @@ app.post('/admin/login', async (req, res) => {
     }
 });
 
-server.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+const startServer = async () => {
+    // 1. Initialize Database Schema
+    await runSchema(pool);
+
+    // 2. Start Server
+    server.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+};
+
+startServer();
 
 module.exports = { app, pool };

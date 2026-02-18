@@ -1,13 +1,7 @@
 -- Enable UUID extension if needed, though we can use SERIAL/INTEGER for simplicity in this MVP
 -- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-DROP TABLE IF EXISTS actions;
-DROP TABLE IF EXISTS games;
-DROP TABLE IF EXISTS players;
-DROP TABLE IF EXISTS lobbies;
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -15,7 +9,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE lobbies (
+CREATE TABLE IF NOT EXISTS lobbies (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     boot_amount INTEGER NOT NULL DEFAULT 100,
@@ -24,7 +18,7 @@ CREATE TABLE lobbies (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE players (
+CREATE TABLE IF NOT EXISTS players (
     id SERIAL PRIMARY KEY,
     lobby_id INTEGER REFERENCES lobbies(id),
     user_id INTEGER REFERENCES users(id),
@@ -37,7 +31,7 @@ CREATE TABLE players (
     UNIQUE(lobby_id, user_id)
 );
 
-CREATE TABLE games (
+CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     lobby_id INTEGER REFERENCES lobbies(id),
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, COMPLETED, SHOW_PENDING
@@ -48,7 +42,7 @@ CREATE TABLE games (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE actions (
+CREATE TABLE IF NOT EXISTS actions (
     id SERIAL PRIMARY KEY,
     game_id INTEGER REFERENCES games(id),
     player_id INTEGER REFERENCES players(id),
